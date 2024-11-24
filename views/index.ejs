@@ -1,91 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Pengunjung</title>
+    <title>Daftar Pengunjung Kolam Renang</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
+        /* Latar belakang untuk seluruh halaman */
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
             background-image: url('/images/kolren.jpg'); 
-            background-size: cover; 
-            background-position: center; 
-            background-attachment: fixed; 
-            color: white; 
+            background-size: cover;
+            background-position: center;
+            color: white;
+            font-family: 'Arial', sans-serif;
         }
 
-        h1, h2 {
-            font-size: 1.5em;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 2em;
-        }
-
-        img {
-            display: none; 
-        }
-
-        form {
-            margin: 20px;
-            background-color: rgba(0, 0, 0, 0.5); 
-            padding: 20px;
+        /* Styling untuk kontainer utama */
+        .container {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 50px;
             border-radius: 10px;
+            text-align: center;
+            margin-top: 100px;
         }
 
-        input, button {
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 1em;
+        /* Styling untuk judul utama */
+        h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
         }
 
-        button {
-            cursor: pointer;
+        /* Styling untuk judul sekunder */
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
         }
 
-        ul {
-            list-style: none;
-            padding: 0;
+        /* Styling untuk tombol */
+        .btn-primary {
+            font-size: 1.2rem;
+            padding: 15px 30px;
+            border-radius: 5px;
+            background-color: #ff6f61;
+            border-color: #ff6f61;
         }
 
-        li {
-            margin: 10px 0;
+        /* Efek hover pada tombol */
+        .btn-primary:hover {
+            background-color: #e55c4b;
+            border-color: #e55c4b;
         }
     </style>
 </head>
 <body>
-    <h1>Daftar Pengunjung Kolam Renang</h1>
+
+<div class="container">
     <h2>Daftar Sekarang! Bergabunglah dengan kami untuk mendapatkan akses lebih mudah ke informasi penting dan fitur eksklusif.</h2>
+    <a href="/contact" class="btn btn-primary">Go to Contact Page</a>
+</div>
 
-    <form action="/users" method="POST">
-        <label>Nama:</label><br>
-        <input type="text" name="nama" required><br>
-        <label>Email:</label><br>
-        <input type="email" name="email" required><br>
-        <label>No Telepon:</label><br>
-        <input type="text" name="noTelp" required><br>
-        <button type="submit">Tambah Pengunjung</button>
-    </form>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
 
-    <h2>Pengunjung</h2>
-    <ul>
-        <% users.forEach(user => { %>
-            <li>
-                <strong><%= user.nama %></strong> (<%= user.email %>) - <%= user.noTelp %>
-                <a href="/users/<%= user.id %>/edit">Edit</a> |
-                <form action="/users/<%= user.id %>" method="POST" style="display:inline;">
-                    <input type="hidden" name="_method" value="DELETE">
-                    <button type="submit">Hapus</button>
-                </form>
-            </li>
-        <% }); %>
-    </ul>
 </body>
 </html>
-
-ChatGPT said:
-ChatGPT

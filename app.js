@@ -1,54 +1,122 @@
-// app.js
 const express = require('express');
-const path = require('path');
-const bodyParser = require('body-parser');
 const app = express();
+const wisataRoutes = require('./routes/pengunjung.js'); 
+require('dotenv').config();
+const port = process.env.PORT;
 
-// Mengimpor rute
-const userRoutes = require('./routes/userRoutes');
+const db = require('./database/db');
+const expressLayouts = require('express-ejs-layouts');
 
-// Menyajikan folder public sebagai statis
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Menentukan view engine
+// Menggunakan express-ejs-layouts untuk layout
+app.use(expressLayouts);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/wisata', wisataRoutes);
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 
-// Menggunakan bodyParser untuk menangani data POST
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// Menggunakan rute untuk mengelola pengunjung
-app.use('/', userRoutes);
-
-// Menjalankan server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server berjalan di http://localhost:${PORT}`);
+// Route tanpa autentikasi
+app.get('/', (req, res) => {
+    res.render('index', {
+        layout: 'layouts/main-layout'
+    });
 });
 
+app.get('/contact', (req, res) => {
+    res.render('contact', {
+        layout: 'layouts/main-layout'
+    });
+});
 
-userRoutes
+// Route untuk melihat daftar pengunjung
+app.get('/pengunjung', (req, res) => {
+    db.query('SELECT * FROM pengunjung', (err, pengunjung) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+        res.render('pengunjung', {
+            layout: 'layouts/main-layout',
+            pengunjung: pengunjung
+        });
+    });
+});
 
-// routes/userRoutes.js
-const express = require('express');
-const router = express.Router();
-const userController = require('../controllers/userController');
+// Route untuk menampilkan form edit pengunjung
+app.get('/editpengunjung/:id', (req, res) => {
+    const pengunjungId = req.params.id;
+    db.query('SELECT * FROM pengunjung WHERE id = ?', [pengunjungId], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+        res.render('editpengunjung', {
+            layout: 'layouts/main-layout',
+            pengunjung: result[0]
+        });
+    });
+});
 
-// Rute untuk halaman utama
-router.get('/', userController.getUsers); // Pastikan rute ini ada dan mengarah ke controller yang benar
+// Route untuk menangani form edit pengunjung
+app.post('/editpengunjung/:id', (req, res) => {
+    const { nama, email, noTelp } = req.body;
+    const pengunjungId = req.params.id;
 
-// Rute untuk mengambil semua pengunjung
-router.get('/users', userController.getUsers);
+    // Validasi input
+    if (!nama || !email || !noTelp) {
+        return res.status(400).send('Nama, email, dan noTelp tidak boleh kosong');
+    }
 
-// Rute untuk menambah pengunjung baru
-router.post('/users', userController.createUser);
+    db.query(
+        'UPDATE pengunjung SET nama = ?, email = ?, noTelp = ? WHERE id = ?',
+        [nama, email, noTelp, pengunjungId],
+        (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send('Internal Server Error');
+            }
+            res.redirect('/pengunjung');  // Redirect ke halaman daftar pengunjung setelah edit
+        }
+    );
+});
 
-// Rute untuk memperbarui pengunjung
-router.put('/users/:id', userController.updateUser);
+// Route untuk menambahkan pengunjung baru
+app.post('/pengunjung', (req, res) => {
+    const { nama, email, noTelp } = req.body;
 
-// Rute untuk menghapus pengunjung
-router.delete('/users/:id', userController.deleteUser);
+       // Validasi input
+       if (!nama || !email || !noTelp) {
+        return res.status(400).send('Nama, email, dan noTelp tidak boleh kosong');
+    }
 
-module.exports = router;
+    const query = 'INSERT INTO pengunjung (nama, email, noTelp) VALUES (?, ?, ?)';
+    
+    db.query(query, [nama, email, noTelp], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error adding visitor');
+        }
+        res.status(201).json({ id: result.insertId, nama, email, noTelp }); // Send the newly created visitor
+    });
+});
 
+// Route untuk menghapus pengunjung berdasarkan ID
+app.delete('/pengunjung/:id', (req, res) => {
+    const pengunjungId = req.params.id;
+    const query = 'DELETE FROM pengunjung WHERE id = ?';
 
+    db.query(query, [pengunjungId], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error deleting visitor');
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).send('Visitor not found');
+        }
+        res.status(200).send('Visitor deleted');
+    });
+});
+
+// Menjalankan server
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}/`);
+});

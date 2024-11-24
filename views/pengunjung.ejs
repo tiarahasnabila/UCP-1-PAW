@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Pengunjung</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container mt-5">
+    <h1 class="text-center">Daftar Pengunjung</h1>
+
+    <!-- Form to Add New Pengunjung -->
+    <form id="addPengunjungForm" class="my-4">
+        <div class="form-group">
+            <input type="text" id="pengunjungName" class="form-control" placeholder="Nama Pengunjung" required>
+        </div>
+        <div class="form-group mt-2">
+            <input type="email" id="pengunjungEmail" class="form-control" placeholder="Email Pengunjung" required>
+        </div>
+        <div class="form-group mt-2">
+            <input type="tel" id="pengunjungPhone" class="form-control" placeholder="No Telp Pengunjung" required>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Tambah Pengunjung</button>
+    </form>
+
+    <!-- List of Pengunjung -->
+    <ul id="pengunjungList" class="list-group">
+        <% pengunjung.forEach(pengunjung => { %>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                    <strong><%= pengunjung.nama %></strong> - <%= pengunjung.email %> - <%= pengunjung.noTelp %>
+                </span>
+                <div>
+                    <button class="btn btn-sm btn-success mr-2 editBtn" data-id="<%= pengunjung.id %>">Edit</button>
+                    <button class="btn btn-sm btn-danger deleteBtn" data-id="<%= pengunjung.id %>">Hapus</button>
+                </div>
+            </li>
+        <% }); %>
+    </ul>
+
+    <!-- Edit Pengunjung Modal -->
+    <div id="editModal" class="modal fade" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Pengunjung</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editPengunjungForm">
+                        <div class="form-group">
+                            <label for="editPengunjungName">Nama</label>
+                            <input type="text" id="editPengunjungName" class="form-control" required>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label for="editPengunjungEmail">Email</label>
+                            <input type="email" id="editPengunjungEmail" class="form-control" required>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label for="editPengunjungPhone">No Telp</label>
+                            <input type="tel" id="editPengunjungPhone" class="form-control" required>
+                        </div>
+                        <button type="submit" id="saveChangesButton" class="btn btn-primary mt-3" disabled>Simpan Data Terbaru</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function () {
+    // Add new pengunjung
+    $('#addPengunjungForm').on('submit', function (e) {
+        e.preventDefault();
+        const name = $('#pengunjungName').val().trim();
+        const email = $('#pengunjungEmail').val().trim();
+        const phone = $('#pengunjungPhone').val().trim();
+        if (name && email && phone) {
+            $.ajax({
+                url: '/pengunjung',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ nama: name, email: email, noTelp: phone }),
+                success: function (newPengunjung) {
+                    // Append new visitor to the list
+                    $('#pengunjungList').append(
+                        `<li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <strong>${newPengunjung.nama}</strong> - ${newPengunjung.email} - ${newPengunjung.noTelp}
+                            </span>
+                            <div>
+                                <button class="btn btn-sm btn-success mr-2 editBtn" data-id="${newPengunjung.id}">Edit</button>
+                                <button class="btn btn-sm btn-danger deleteBtn" data-id="${newPengunjung.id}">Hapus</button>
+                            </div>
+                        </li>`
+                    );
+                    // Reset form fields
+                    $('#addPengunjungForm')[0].reset();
+                },
+                error: function (error) {
+                    console.error("Error adding pengunjung:", error.responseText);
+                }
+            });
+        }
+    });
+
+    // Delete a pengunjung
+    $('#pengunjungList').on('click', '.deleteBtn', function () {
+        const id = $(this).data('id');
+        $.ajax({
+            url: '/pengunjung/' + id,
+            type: 'DELETE',
+            success: function () {
+                $(this).closest('li').remove(); // Remove the list item from the DOM
+            }.bind(this),
+            error: function (error) {
+                console.error("Error deleting pengunjung:", error.responseText);
+            }
+        });
+    });
+
+    // Show edit modal with the current pengunjung data
+    let editId;
+    $('#pengunjungList').on('click', '.editBtn', function () {
+        editId = $(this).data('id');
+        const currentPengunjung = $(this).closest('li').find('span').text().split(' - ');
+        $('#editPengunjungName').val(currentPengunjung[0]);
+        $('#editPengunjungEmail').val(currentPengunjung[1]);
+        $('#editPengunjungPhone').val(currentPengunjung[2]);
+        $('#editModal').modal('show');
+    });
+    // Mengaktifkan tombol "Simpan Data Terbaru" jika input valid
+    $('#editPengunjungName, #editPengunjungEmail, #editPengunjungPhone').on('input', function () {
+        const name = $('#editPengunjungName').val().trim();
+        const email = $('#editPengunjungEmail').val().trim();
+        const phone = $('#editPengunjungPhone').val().trim();
+        const isValid = name && email && phone;
+        $('#saveChangesButton').prop('disabled', !isValid); // Mengaktifkan atau menonaktifkan tombol
+    });
+    // Update pengunjung on form submission
+    $('#editPengunjungForm').on('submit', function (e) {
+        e.preventDefault();
+        const name = $('#editPengunjungName').val().trim();
+        const email = $('#editPengunjungEmail').val().trim();
+        const phone = $('#editPengunjungPhone').val().trim();
+        if (name && email && phone) {
+            $.ajax({
+                url: '/pengunjung/' + editId,
+                type: 'PUT',
+                data: JSON.stringify({ nama: name, email: email, noTelp: phone }),
+                contentType: 'application/json',
+                success: function () {
+                    // Update the list item with new values
+                    const listItem = $('#pengunjungList').find(`[data-id="${editId}"]`).closest('li');
+                    listItem.find('span').html(`<strong>${name}</strong> - ${email} - ${phone}`);
+                    $('#editModal').modal('hide'); // Close the modal
+                }
+            });
+        }
+    });
+});
+</script>
+</body>
+</html>
